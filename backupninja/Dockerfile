@@ -35,4 +35,4 @@ RUN apt-get autoremove \
 ENV TZ="UTC"
 
 ENTRYPOINT ["/usr/sbin/backupninja"]
-CMD ["--debug --now"]	
+CMD ["--debug", "--now"]	
