@@ -35,8 +35,9 @@ RUN apt-get autoremove \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --chmod=0755 ./usr/share/backupninja/* /usr/share/backupninja/
+COPY --chmod=0755 ./entrypoint.sh /entrypoint.sh
 
 ENV TZ="UTC"
 
-ENTRYPOINT ["/usr/sbin/backupninja"]
-CMD ["--debug", "--now"]	
+ENTRYPOINT ["/entrypoint.sh"]
+CMD []

@@ -109,7 +109,7 @@ if [ "$dedupe" == "yes" ]; then
 fi
 
 for source in $include; do
-	info "Syncing $source on $dest_path..."
+	info "Syncing $source on $remote..."
 
 	command="$rclone sync $source $remote ${rclone_base_options[@]} ${rclone_sync_options[@]}"
 	debug $nice su -c "$command"
