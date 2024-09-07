@@ -25,12 +25,16 @@ RUN apt-get update && \
 #   .pgsql support
 	postgresql \
 # 	.mysql support
-	mariadb-server
+	mariadb-server \
+#	.rclone support
+	rclone
 
 RUN apt-get autoremove \
     && apt-get autoclean \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --chmod=0755 ./usr/share/backupninja/* /usr/share/backupninja/
 
 ENV TZ="UTC"
 

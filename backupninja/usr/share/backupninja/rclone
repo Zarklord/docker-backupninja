@@ -1,0 +1,124 @@
+# -*- mode: sh; sh-basic-offset: 3; indent-tabs-mode: nil; -*-
+# vim: set filetype=sh sw=3 sts=3 expandtab autoindent:
+
+function eval_config {
+
+	setsection general
+	getconf rclone /usr/bin/rclone
+	getconf rclone_base_options --config /rclone.conf
+	getconf rclone_base_ext_options
+	getconf rclone_dedupe_options --dedupe-mode newest
+	getconf rclone_dedupe_ext_options
+	getconf rclone_sync_options --create-empty-src-dirs --copy-links --ignore-errors
+	getconf rclone_sync_ext_options
+	getconf log /var/log/backup/rclone.log
+	getconf nicelevel 0
+	getconf ionicelevel
+
+	setsection source
+	getconf include
+	getconf retries 0
+
+	setsection dest
+	getconf remote
+	getconf dedupe yes
+
+	if [ ! -z "$log" ]; then
+		mkdir -p `dirname $log`
+	fi
+
+	if [ ! -z "$nicelevel" ]; then
+		nice="nice -n $nicelevel"
+	else
+		nice=""
+	fi
+
+	if [ -n "$ionicelevel" ]; then
+		nice="ionice -c2 -n $ionicelevel $nice"
+	fi
+}
+
+function set_rclone_options {
+	if [ $retries -gt 0 ]; then
+		rclone_sync_options="$rclone_sync_options --retries $retries"
+	fi
+
+    rclone_base_options=($rclone_base_options $rclone_base_ext_options)
+    rclone_dedupe_options=($rclone_dedupe_options $rclone_dedupe_ext_options)
+    rclone_sync_options=($rclone_sync_options $rclone_sync_ext_options)
+}
+
+function set_pipefail {
+
+  # Save initial pipefail status for later restoration
+  if echo "$SHELLOPTS" | grep -q ":pipefail"; then
+     pipefail="-o"
+  else
+     pipefail="+o"
+  fi
+
+  # Ensure that a non-zero rclone exit status is caught by our handler
+  set -o pipefail
+
+}
+
+function restore_pipefail {
+
+  if [ ! -z "$pipefail" ]; then
+    set $pipefail pipefail
+  fi
+
+}
+
+function check_rclone_exit_status {
+
+  if [ -z "$1" ]; then
+    return
+  fi
+
+  case $1 in
+    0)
+       debug "Rclone command '$command' finished successfully."
+       return
+       ;;
+    1|2|3|4|5|7)
+       fatal "Rclone error $1 when executing $command"
+       ;;
+    *)
+       warning "Rclone error $1 when executing $command"
+       ;;
+  esac
+
+}
+
+eval_config
+set_rclone_options
+
+starttime="`date +%c%n%s`"
+echo "Starting backup at `echo "$starttime" | head -n 1`" >> $log
+
+if [ "$dedupe" == "yes" ]; then
+	command="$rclone dedupe $remote ${rclone_base_options[@]} ${rclone_dedupe_options[@]}"
+	debug $nice su -c "$command"
+	set_pipefail
+	$nice su -c "$command" | tee -a $log
+
+	check_rclone_exit_status $?
+	restore_pipefail
+	update_metadata
+fi
+
+for source in $include; do
+	info "Syncing $source on $dest_path..."
+
+	command="$rclone sync $source $remote ${rclone_base_options[@]} ${rclone_sync_options[@]}"
+	debug $nice su -c "$command"
+	set_pipefail
+	$nice su -c "$command" | tee -a $log
+
+	check_rclone_exit_status $?
+	restore_pipefail
+done
+
+
+echo "Finished backup at `date`" >> $log
