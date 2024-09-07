@@ -1,6 +1,7 @@
 FROM debian:12.7-slim
 
-RUN apt install --no-install-recommends \
+RUN apt-get update && \
+	apt-get install --no-install-recommends \
     tzdata \
     backupninja \
 #	.dup support
@@ -26,9 +27,9 @@ RUN apt install --no-install-recommends \
 # 	.mysql support
 	mariadb-server
 
-RUN apt autoremove \
-    && apt autoclean \
-    && apt clean \
+RUN apt-get autoremove \
+    && apt-get autoclean \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 ENV TZ="UTC"
