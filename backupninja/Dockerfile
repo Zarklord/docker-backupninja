@@ -1,7 +1,7 @@
 FROM debian:12.7-slim
 
 RUN apt-get update && \
-	apt-get install --no-install-recommends \
+	apt-get install -y --no-install-recommends \
     tzdata \
     backupninja \
 #	.dup support
