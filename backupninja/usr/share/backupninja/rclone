@@ -5,11 +5,11 @@ function eval_config {
 
 	setsection general
 	getconf rclone /usr/bin/rclone
-	getconf rclone_base_options --config /rclone.conf
+	getconf rclone_base_options "--config /rclone.conf"
 	getconf rclone_base_ext_options
-	getconf rclone_dedupe_options --dedupe-mode newest
+	getconf rclone_dedupe_options "--dedupe-mode newest"
 	getconf rclone_dedupe_ext_options
-	getconf rclone_sync_options --create-empty-src-dirs --copy-links --ignore-errors
+	getconf rclone_sync_options "--create-empty-src-dirs --copy-links --ignore-errors"
 	getconf rclone_sync_ext_options
 	getconf log /var/log/backup/rclone.log
 	getconf nicelevel 0
