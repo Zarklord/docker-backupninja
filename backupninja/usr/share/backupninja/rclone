@@ -5,7 +5,7 @@ function eval_config {
 
 	setsection general
 	getconf rclone /usr/bin/rclone
-	getconf rclone_base_options "--config /rclone.conf"
+	getconf rclone_base_options "--config /rclone.conf -v"
 	getconf rclone_base_ext_options
 	getconf rclone_dedupe_options "--dedupe-mode newest"
 	getconf rclone_dedupe_ext_options
@@ -53,10 +53,7 @@ function set_rclone_options {
 	if [ $retries -gt 0 ]; then
 		rclone_sync_options="$rclone_sync_options --retries $retries"
 	fi
-
-
-
-    rclone_base_options=($rclone_base_options $rclone_base_ext_options)
+    rclone_base_options=($rclone_base_options --log-file $log $rclone_base_ext_options)
     rclone_dedupe_options=($rclone_dedupe_options $rclone_dedupe_ext_options)
     rclone_sync_options=($rclone_sync_options $rclone_sync_ext_options)
 }	

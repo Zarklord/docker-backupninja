@@ -10,4 +10,4 @@ fi
 
 /usr/sbin/backupninja --now > /dev/null 2>&1 &
 
-tail -F /var/log/backupninja.log /var/log/backup/rclone.log	
+tail -F /var/log/backupninja.log /var/log/backup/*.log
