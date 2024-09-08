@@ -10,4 +10,6 @@ fi
 
 /usr/sbin/backupninja --now > /dev/null 2>&1 &
 
+mkdir -p /var/log/backup
+
 tail -F /var/log/backupninja.log /var/log/backup/*.log
