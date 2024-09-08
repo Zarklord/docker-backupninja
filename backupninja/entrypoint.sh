@@ -12,4 +12,4 @@ fi
 
 mkdir -p /var/log/backup
 
-tail -F /var/log/backupninja.log /var/log/backup/*.log
+xtail /var/log/backupninja.log /var/log/backup/*
