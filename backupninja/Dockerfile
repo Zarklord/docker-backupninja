@@ -5,7 +5,7 @@ RUN apt-get install -y postgresql-common
 RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
 
 RUN	apt-get install -y --no-install-recommends \
-	multitail \
+	xtail \
 	ca-certificates \
     tzdata \
     backupninja \
