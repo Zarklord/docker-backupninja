@@ -16,7 +16,8 @@ function eval_config {
 	getconf ionicelevel
 
 	setsection source
-	getconf include
+	getconf source
+	getconf exclude
 	getconf retries 0
 
 	setsection dest
@@ -36,12 +37,24 @@ function eval_config {
 	if [ -n "$ionicelevel" ]; then
 		nice="ionice -c2 -n $ionicelevel $nice"
 	fi
+
+	set -o noglob
+	SAVEIFS=$IFS
+	IFS=$(echo -en "\n\b")
+	for i in $exclude; do
+		str="${i//__star__/*}"
+		excludes="${excludes} --exclude=$str"
+	done
+	IFS=$SAVEIFS
+	set +o noglob
 }
 
 function set_rclone_options {
 	if [ $retries -gt 0 ]; then
 		rclone_sync_options="$rclone_sync_options --retries $retries"
 	fi
+
+
 
     rclone_base_options=($rclone_base_options $rclone_base_ext_options)
     rclone_dedupe_options=($rclone_dedupe_options $rclone_dedupe_ext_options)
@@ -108,17 +121,15 @@ if [ "$dedupe" == "yes" ]; then
 	update_metadata
 fi
 
-for source in $include; do
-	info "Syncing $source on $remote..."
+info "Syncing $source on $remote..."
 
-	command="$rclone sync $source $remote ${rclone_base_options[@]} ${rclone_sync_options[@]}"
-	debug $nice su -c "$command"
-	set_pipefail
-	$nice su -c "$command" | tee -a $log
+command="$rclone sync $source $remote $excludes ${rclone_base_options[@]} ${rclone_sync_options[@]}"
+debug $nice su -c "$command"
+set_pipefail
+$nice su -c "$command" | tee -a $log
 
-	check_rclone_exit_status $?
-	restore_pipefail
-done
+check_rclone_exit_status $?
+restore_pipefail
 
 
 echo "Finished backup at `date`" >> $log

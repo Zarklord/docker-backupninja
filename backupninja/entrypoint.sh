@@ -8,6 +8,6 @@ then
   echo $TZ > /etc/timezone
 fi
 
-/usr/sbin/backupninja --debug --now &
+/usr/sbin/backupninja --now > /dev/null 2>&1 &
 
-tail -F /var/log/backupninja.log
+tail -F /var/log/backupninja.log /var/log/backup/rclone.log	
