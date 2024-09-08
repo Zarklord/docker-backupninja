@@ -12,4 +12,4 @@ fi
 
 mkdir -p /var/log/backup
 
-multitail --no-mergeall -I "/var/log/backupninja.log" -Iw "/var/log/backup/*" 10
+multitail --no-mergeall -Iw "/var/log/*ackupninja.log" 10 -Iw "/var/log/backup/*" 10
