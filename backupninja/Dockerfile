@@ -1,10 +1,8 @@
 FROM debian:12.7-slim
 
-
-
 RUN apt-get update
 RUN apt-get install -y postgresql-common
-RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
 
 RUN	apt-get install -y --no-install-recommends \
 	ca-certificates \
