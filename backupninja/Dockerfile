@@ -1,7 +1,13 @@
 FROM debian:12.7-slim
 
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends \
+
+
+RUN apt-get update &&
+
+RUN apt-get install -y postgresql-common
+RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+
+RUN	apt-get install -y --no-install-recommends \
 	ca-certificates \
     tzdata \
     backupninja \
@@ -24,7 +30,7 @@ RUN apt-get update && \
 #	.restic support
 	restic \
 #   .pgsql support
-	postgresql \
+	postgresql-16 \
 # 	.mysql support
 	mariadb-server \
 #	.rclone support
