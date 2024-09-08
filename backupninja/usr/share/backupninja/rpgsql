@@ -14,6 +14,7 @@ getconf pg_host localhost
 getconf pg_port 5432
 getconf pg_user $PGSQLUSER
 getconf pg_password
+getconf pg_database postgres
 
 pg_connection="-h $pg_host -p $pg_port -U $pg_user"
 if [ -n "$pg_password" ]; then
@@ -50,7 +51,7 @@ chmod 700 $backupdir
 # of all non-template databases to avoid the use of pg_dumpall.
 dumpglobals="no"
 if [ "$databases" = "all" ] && [ "$format" != "plain" ]; then
-   execstr="$PSQL $pg_connection -At -c \"SELECT datname FROM pg_database WHERE NOT datistemplate\""
+   execstr="$PSQL $pg_connection -d $pg_database -Atc \"SELECT datname FROM pg_database WHERE NOT datistemplate\""
    debug execstr
    dblist=""
    for db in $(eval $execstr 2>&1); do
