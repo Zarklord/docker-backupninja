@@ -1,0 +1,137 @@
+# -*- mode: sh; sh-basic-offset: 3; indent-tabs-mode: nil; -*-
+# vim: set filetype=sh sw=3 sts=3 expandtab autoindent:
+#
+# mysql handler script for backupninja
+#
+
+getconf backupdir /var/backups/mysql
+getconf databases all
+getconf ignores
+getconf nodata
+getconf hotcopy no
+getconf sqldump no
+getconf sqldumpoptions "--lock-tables --complete-insert --add-drop-table --quick --quote-names"
+getconf compress yes
+
+# authentication:
+getconf dbhost localhost
+getconf dbport 3306
+getconf dbusername
+getconf dbpassword
+
+mysql_connection="-h $dbhost -P $dbport -u $dbusername -p$dbpassword"
+
+## Prepare ignore part of the command
+## This only works for mysqldump at the moment
+ignore=''
+for i in $ignores $nodata; do
+   ignore="$ignore --ignore-table=$i"
+done
+
+# create backup dirs
+# and we will instead proceed to operate on the host
+[ -d $backupdir ] || mkdir -p $backupdir
+[ -d $backupdir ] || fatal "Backup directory '$backupdir'"
+hotdir="$backupdir/hotcopy"
+dumpdir="$backupdir/sqldump"
+
+[ "$sqldump" == "no" -o -d $dumpdir ] || mkdir -p $dumpdir
+[ "$hotcopy" == "no" -o -d $hotdir ] || mkdir -p $hotdir
+
+#######################################################################
+## HOT COPY
+
+if [ "$hotcopy" == "yes" ]; then
+    info "Initializing hotcopy method"
+    if [ "$databases" == "all" ]; then
+        execstr="$MYSQLHOTCOPY $mysql_connection --quiet --allowold --regexp /.\*/./.\*/ $hotdir"
+        debug "$execstr"
+        if [ ! $test ]; then
+            output=`$execstr 2>&1`
+            code=$?
+            if [ "$code" == "0" ]; then
+                debug "$output"
+                info "Successfully finished hotcopy of all mysql databases"
+            else
+                warning "$output"
+                warning "Failed to hotcopy all mysql databases"
+            fi
+        fi
+    else
+        for db in $databases; do
+            execstr="$MYSQLHOTCOPY $mysql_connection --allowold $db $hotdir"
+            debug '$execstr'
+            if [ ! $test ]; then
+                output=`$execstr 2>&1`
+                code=$?
+                if [ "$code" == "0" ]; then
+                    debug "$output"
+                    info "Successfully finished hotcopy of mysql database $db"
+                else
+                    warning "$output"
+                    warning "Failed to hotcopy mysql database $db"
+                fi
+            fi
+        done
+    fi
+fi
+
+##########################################################################
+## SQL DUMP
+
+if [ "$sqldump" == "yes" ]; then
+    info "Initializing SQL dump method"
+    if [ "$databases" == "all" ]; then
+        databases=$(set -o pipefail ; $MYSQL $mysql_connection -N -B -e 'show databases' | sed 's/|//g;/\+----/d;/^\(information\|performance\)_schema$/d')
+        if [ $? -ne 0 ]; then
+            fatal "Authentication problem, maybe user/password is wrong or mysqld is not running?"
+        fi
+    fi
+
+    for db in $databases; do
+        # Sanitize database name
+        db=$(echo $db | tr -d \'\;)
+
+        DUMP_BASE="$MYSQLDUMP $mysql_connection $sqldumpoptions"
+
+        # Dumping structure and data
+        DUMP="$DUMP_BASE $ignore $db"
+
+        # If requested, dump only the table structure for this database
+        if echo "$nodata" | grep -E '(^|[[:space:]])'"$db\." >/dev/null; then
+            # Get the structure of the tables, without data
+            DUMP_STRUCT="$DUMP_BASE --no-data $db"
+            for qualified_table in $nodata; do
+                table=$( expr match "$qualified_table" "$db\.\(.\+\)" )
+                DUMP_STRUCT="$DUMP_STRUCT $table"
+            done
+            DUMP="( $DUMP; $DUMP_STRUCT )"
+        fi
+
+        # Test to make sure mysqld is running, if it is not sqldump will not work
+        $MYSQLADMIN $mysql_connection ping 2>&1 >/dev/null
+        if [ $? -ne 0 ]; then
+            fatal "mysqld doesn't appear to be running!"
+        fi
+        if [ "$compress" == "yes" ]; then
+            execstr="$DUMP | $GZIP $GZIP_OPTS > '$dumpdir/${db}.sql.gz'"
+        else
+            execstr="$DUMP > '$dumpdir/${db}.sql'"
+        fi
+        debug "$execstr"
+
+        if [ ! $test ]; then
+            output=`set -o pipefail ; $execstr 2>&1`
+            code=$?
+            if [ "$code" == "0" ]; then
+                debug "$output"
+                info "Successfully finished dump of mysql database $db"
+            else
+                warning "$output"
+                warning "Failed to dump mysql databases $db"
+            fi
+        fi
+    done
+fi
+
+return 0
