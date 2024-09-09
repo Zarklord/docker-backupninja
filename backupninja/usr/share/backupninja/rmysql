@@ -62,7 +62,7 @@ if [ "$hotcopy" == "yes" ]; then
             execstr="$MYSQLHOTCOPY $mysql_connection --allowold $db $hotdir"
             debug '$execstr'
             if [ ! $test ]; then
-                output=`$execstr 2>&1`
+                output=`eval $execstr 2>&1`
                 code=$?
                 if [ "$code" == "0" ]; then
                     debug "$output"
@@ -114,14 +114,14 @@ if [ "$sqldump" == "yes" ]; then
             fatal "mysqld doesn't appear to be running!"
         fi
         if [ "$compress" == "yes" ]; then
-            execstr="$DUMP | $GZIP $GZIP_OPTS > '$dumpdir/${db}.sql.gz'"
+            execstr="set -o pipefail ; $DUMP | $GZIP $GZIP_OPTS > '$dumpdir/${db}.sql.gz'"
         else
             execstr="$DUMP > '$dumpdir/${db}.sql'"
         fi
         debug "$execstr"
 
         if [ ! $test ]; then
-            output=`set -o pipefail ; $execstr 2>&1`
+            output=`eval $execstr`
             code=$?
             if [ "$code" == "0" ]; then
                 debug "$output"
