@@ -9,6 +9,8 @@ function eval_config {
 	getconf rclone_base_ext_options
 	getconf rclone_dedupe_options "--dedupe-mode newest"
 	getconf rclone_dedupe_ext_options
+	getconf rclone_cleanup_options
+	getconf rclone_cleanup_ext_options
 	getconf rclone_sync_options "--create-empty-src-dirs --copy-links --ignore-errors --delete-excluded"
 	getconf rclone_sync_ext_options
 	getconf log /var/log/backup/rclone.log
@@ -23,7 +25,8 @@ function eval_config {
 
 	setsection dest
 	getconf remote
-	getconf dedupe yes
+	getconf dedupe no
+	getconf cleanup no
 
 	if [ ! -z "$log" ]; then
 		mkdir -p `dirname $log`
@@ -60,6 +63,7 @@ function set_rclone_options {
 	fi
     rclone_base_options=($rclone_base_options --log-file $log $rclone_base_ext_options)
     rclone_dedupe_options=($rclone_dedupe_options $rclone_dedupe_ext_options)
+    rclone_cleanup_options=($rclone_cleanup_options $rclone_cleanup_ext_options)
     rclone_sync_options=($rclone_sync_options $rclone_sync_ext_options)
 }	
 
@@ -114,6 +118,17 @@ echo "Starting backup at `echo "$starttime" | head -n 1`" >> $log
 
 if [ "$dedupe" == "yes" ]; then
 	command="$rclone dedupe $remote ${rclone_base_options[@]} ${rclone_dedupe_options[@]}"
+	debug $nice su -c "$command"
+	set_pipefail
+	$nice su -c "$command" | tee -a $log
+
+	check_rclone_exit_status $?
+	restore_pipefail
+	update_metadata
+fi
+
+if [ "$cleanup" == "yes" ]; then
+	command="$rclone cleanup $remote ${rclone_base_options[@]} ${rclone_cleanup_options[@]}"
 	debug $nice su -c "$command"
 	set_pipefail
 	$nice su -c "$command" | tee -a $log
