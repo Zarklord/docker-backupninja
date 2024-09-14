@@ -8,6 +8,7 @@ RUN	apt-get install -y --no-install-recommends \
 	xtail \
 	ca-certificates \
     tzdata \
+	openssh-client \
     backupninja \
 #	.dup support
 	duplicity trickle \
