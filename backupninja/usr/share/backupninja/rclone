@@ -5,7 +5,7 @@ function eval_config {
 
 	setsection general
 	getconf rclone /usr/bin/rclone
-	getconf rclone_base_options "--config /rclone.conf -v"
+	getconf rclone_base_options "--config /rclone/rclone.conf -v"
 	getconf rclone_base_ext_options
 	getconf rclone_dedupe_options "--dedupe-mode newest"
 	getconf rclone_dedupe_ext_options
