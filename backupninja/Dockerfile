@@ -1,4 +1,4 @@
-FROM debian:12.9-slim
+FROM debian:12.15-slim
 
 # setup postgres apt repository
 RUN apt-get update \
